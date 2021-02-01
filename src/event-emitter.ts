@@ -5,7 +5,7 @@ import { EventArgs } from "./event-args";
 import { IEvent } from "./ievent";
 import { EventHandler, IEventEmitter } from "./ievent-emitter";
 
-export class EventEmitter<T = any, R = void> extends Disposable implements IEventEmitter<T, R> {
+export class EventEmitter<T = void, R = void> extends Disposable implements IEventEmitter<T, R> {
     private _handlers?: EventHandler<T, R>[];
 
     get size(): number { return this._handlers ? this._handlers.length : 0; }
