@@ -1,4 +1,4 @@
-import { IDisposable } from "@aster-js/core";
+import { Disposable, IDisposable } from "@aster-js/core";
 
 import { EventArgs } from "./event-args";
 import { IEventEmitter, EventHandler } from "./ievent-emitter";
@@ -14,6 +14,9 @@ export namespace IEvent {
             handler = thisArgs ? handler.bind(thisArgs) : handler;
             emitter.addHandler(handler);
 
+            if (thisArgs instanceof Disposable) {
+                thisArgs
+            }
             return IDisposable.create(() => emitter.removeHandler(handler));
         };
     }
