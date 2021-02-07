@@ -1,21 +1,20 @@
 import { IDisposable } from "@aster-js/core";
 
-import { EventArgs } from "./event-args";
 import { IEvent } from "./ievent";
 
-export type EventHandler<T = any, R = void> = (ev: EventArgs<T, R>) => void;
+export type EventHandler<T extends any[] = []> = (...args: T) => void;
 
-export interface IEventEmitter<T = any, R = void> extends IDisposable {
+export interface IEventEmitter<T extends any[] = []> extends IDisposable {
 
     readonly size: number;
 
-    readonly event: IEvent<T, R>;
+    readonly event: IEvent<T>;
 
-    trigger(detail: T): EventArgs<T, R>;
+    emit(...args: T): void;
 
-    handlers(): IterableIterator<EventHandler<T, R>>;
+    handlers(): IterableIterator<EventHandler<T>>;
 
-    addHandler(handler: EventHandler<T, R>): void;
+    addHandler(handler: EventHandler<T>): void;
 
-    removeHandler(handler: EventHandler<T, R>): void;
+    removeHandler(handler: EventHandler<T>): void;
 }
