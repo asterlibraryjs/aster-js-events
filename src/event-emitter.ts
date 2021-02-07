@@ -1,35 +1,29 @@
 import { Disposable } from "@aster-js/core";
 import { Memoize } from "@aster-js/decorators";
 
-import { EventArgs } from "./event-args";
 import { IEvent } from "./ievent";
 import { EventHandler, IEventEmitter } from "./ievent-emitter";
 
-export class EventEmitter<T = void, R = void> extends Disposable implements IEventEmitter<T, R> {
-    private _handlers?: EventHandler<T, R>[];
+export class EventEmitter<T extends any[] = []> extends Disposable implements IEventEmitter<T> {
+    private _handlers?: EventHandler<T>[];
 
     get size(): number { return this._handlers ? this._handlers.length : 0; }
 
-    @Memoize get event(): IEvent<T, R> { return IEvent.create(this); }
+    @Memoize get event(): IEvent<T> { return IEvent.create(this); }
 
-    trigger(detail: T): EventArgs<T, R> {
-        const args = new EventArgs<T, R>(detail);
-
+    emit(...args: T): void {
         for (const callback of this.handlers()) {
-            callback(args);
-            if (args.cancelled) break;
+            callback(...args);
         }
-
-        return args;
     }
 
-    *handlers(): IterableIterator<EventHandler<T, R>> {
+    *handlers(): IterableIterator<EventHandler<T>> {
         if (this._handlers) {
             yield* this._handlers;
         }
     }
 
-    addHandler(handler: EventHandler<T, R>): void {
+    addHandler(handler: EventHandler<T>): void {
         this.checkIfDisposed();
 
         if (this._handlers) {
@@ -40,7 +34,7 @@ export class EventEmitter<T = void, R = void> extends Disposable implements IEve
         }
     }
 
-    removeHandler(handler: EventHandler<T, R>): void {
+    removeHandler(handler: EventHandler<T>): void {
         if (this._handlers) {
             const idx = this._handlers.indexOf(handler);
             if (idx !== -1) this._handlers.splice(idx, 1);

@@ -5,12 +5,13 @@ describe("Emitter", () => {
 
     it("Should emitte properly an event", async () => {
         const spyEvent = spy();
-        const emitter = new EventEmitter();
+        const emitter = new EventEmitter<[id: number, name: string]>();
         emitter.event(spyEvent);
 
-        emitter.trigger();
+        emitter.emit(44, "Bob");
 
         assert.calledOnce(spyEvent);
+        assert.calledWithExactly(spyEvent, 44, "Bob");
     });
 
     it("Should emitte properly an event with multiple listeners", async () => {
@@ -22,7 +23,7 @@ describe("Emitter", () => {
         emitter.event(spyEvent2);
         emitter.event(spyEvent3);
 
-        emitter.trigger();
+        emitter.emit();
 
         assert.calledOnce(spyEvent1);
         assert.calledOnce(spyEvent2);

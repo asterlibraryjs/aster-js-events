@@ -1,39 +1,39 @@
 import { Disposable, IDisposable } from "@aster-js/core";
 
-import { EventArgs } from "./event-args";
 import { IEventEmitter, EventHandler } from "./ievent-emitter";
 
-export interface IEvent<T = any, R = void> {
-    (handler: EventHandler<T, R>, thisArgs?: any): IDisposable;
+export interface IEvent<T extends any[] = []> {
+    (handler: EventHandler<T>, thisArgs?: any): IDisposable;
 }
 
 export namespace IEvent {
 
-    export function create<T = any, R = void>(emitter: IEventEmitter<T, R>): IEvent<T, R> {
-        return (handler: (ev: EventArgs<T, R>) => void, thisArgs?: any) => {
+    export function create<T extends any[] = []>(emitter: IEventEmitter<T>): IEvent<T> {
+        return (handler: EventHandler<T>, thisArgs?: any) => {
             handler = thisArgs ? handler.bind(thisArgs) : handler;
             emitter.addHandler(handler);
 
+            const result = IDisposable.create(() => emitter.removeHandler(handler));
             if (thisArgs instanceof Disposable) {
-                thisArgs
+                thisArgs.registerForDispose(result);
             }
-            return IDisposable.create(() => emitter.removeHandler(handler));
+            return result;
         };
     }
 
-    export function next<T = any, R = void>(event: IEvent<T, R>): Promise<R | undefined> {
-        return new Promise<R | undefined>((f) => {
-            const handler = event(args => {
+    export function next<T extends any[] = []>(event: IEvent<T>): Promise<T> {
+        return new Promise<T>((f) => {
+            const handler = event((...args) => {
                 IDisposable.safeDispose(handler);
-                f(args.result);
+                f(args);
             });
         });
     }
 
-    export function once<T = any, R = void>(event: IEvent<T, R>, callback: (ev: EventArgs<T, R>) => void, thisArgs?: any): void {
-        const handler = event(args => {
+    export function once<T extends any[] = []>(event: IEvent<T>, callback: EventHandler<T>, thisArgs?: any): void {
+        const handler = event((...args) => {
             IDisposable.safeDispose(handler);
-            callback.call(thisArgs, args);
+            callback.call(thisArgs, ...args);
         });
     }
 }
