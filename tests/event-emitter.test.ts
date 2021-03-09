@@ -1,9 +1,9 @@
 import { assert, spy } from "sinon";
 import { EventEmitter } from "../src";
 
-describe("Emitter", () => {
+describe("EventEmitter", () => {
 
-    it("Should emitte properly an event", async () => {
+    it("Should emit properly an event", () => {
         const spyEvent = spy();
         const emitter = new EventEmitter<[id: number, name: string]>();
         emitter.event(spyEvent);
@@ -14,7 +14,7 @@ describe("Emitter", () => {
         assert.calledWithExactly(spyEvent, 44, "Bob");
     });
 
-    it("Should emitte properly an event with multiple listeners", async () => {
+    it("Should emit properly an event with multiple listeners", () => {
         const spyEvent1 = spy();
         const spyEvent2 = spy();
         const spyEvent3 = spy();
