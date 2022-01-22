@@ -1,6 +1,6 @@
 {
   "name": "@aster-js/events",
-  "version": "1.0.2",
+  "version": "1.2.0",
   "description": "Aster events library part of Aster js library",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -26,8 +26,8 @@
   "license": "ISC",
   "dependencies": {
     "tslib": "^2.1.0",
-    "@aster-js/core": "^1.1.0",
-    "@aster-js/decorators": "^1.0.0"
+    "@aster-js/core": "^1.2.1",
+    "@aster-js/decorators": "^1.0.1"
   },
   "devDependencies": {
     "rollup": "^2.38.5",

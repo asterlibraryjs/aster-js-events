@@ -1,23 +1,28 @@
 import { Disposable, IDisposable } from "@aster-js/core";
-import { AsyncEventEmitter, AsyncEventHandler } from "./async-event-emitter";
-import { EventEmitter, EventHandler } from "./event-emitter";
+import { AsyncEventIterator } from "./async-event-iterator";
+import { AsyncEventHandler, EventHandler, IAsyncEventEmitter, IEventEmitter } from "./ievent-emitter";
 
-export type IEvent<T extends any[] = []> = {
+export type SyncEvent<T extends any[] = []> = AsyncIterable<T> & {
     readonly async: undefined;
     (handler: EventHandler<T>, thisArgs?: any): IDisposable;
 }
 
-export type IAsyncEvent<T extends any[] = []> = {
+/**
+ * Async event allow
+ */
+export type AsyncEvent<T extends any[] = []> = AsyncIterable<T> & {
     readonly async: true;
     (handler: AsyncEventHandler<T>, thisArgs?: any): IDisposable;
 }
 
+export type IEvent<T extends any[] = [], Async extends boolean = false> = Async extends true ? AsyncEvent<T> : SyncEvent<T>;
+
 export namespace IEvent {
 
-    export function create<T extends any[] = []>(emitter: EventEmitter<T>): IEvent<T>;
-    export function create<T extends any[] = []>(emitter: AsyncEventEmitter<T>): IAsyncEvent<T>;
-    export function create<T extends any[] = []>(emitter: AsyncEventEmitter<T> | EventEmitter<T>): IEvent<T> | IAsyncEvent<T> {
-        const event = (handler: (...args: any) => any, thisArgs?: any) => {
+    export function create<T extends any[] = []>(emitter: IEventEmitter<T>): SyncEvent<T>;
+    export function create<T extends any[] = []>(emitter: IAsyncEventEmitter<T>): AsyncEvent<T>;
+    export function create<T extends any[] = []>(emitter: IAsyncEventEmitter<T> | IEventEmitter<T>): IEvent<T, boolean> {
+        const event = ((handler: (...args: any) => any, thisArgs?: any) => {
             handler = thisArgs ? handler.bind(thisArgs) : handler;
             emitter.addHandler(handler);
 
@@ -26,14 +31,21 @@ export namespace IEvent {
                 thisArgs.registerForDispose(result);
             }
             return result;
-        };
-        if (emitter instanceof AsyncEventEmitter) {
-            Reflect.set(event, "async", true);
-        }
-        return event as IEvent<T> | IAsyncEvent<T>;
+        }) as IEvent<T, boolean>;
+
+        Reflect.set(event, Symbol.asyncIterator, () => new AsyncEventIterator(event, emitter.iteratorQueueMaxSize));
+
+        if (emitter.async) Reflect.set(event, "async", true);
+
+        return event;
     }
 
-    export function next<T extends any[] = []>(event: IEvent<T> | IAsyncEvent<T>): Promise<T> {
+    /**
+     * Returns the next event arguments passed to the provided event
+     * @param event Event to listen
+     * @returns Arguments passed to the emitter
+     */
+    export function next<T extends any[] = []>(event: IEvent<T, boolean>): Promise<T> {
         return new Promise<T>((f) => {
             const handler = event.async
                 ? event(async (...args) => {
@@ -47,15 +59,21 @@ export namespace IEvent {
         });
     }
 
-    export function once<T extends any[] = []>(event: IEvent<T> | IAsyncEvent<T>, callback: EventHandler<T>, thisArgs?: any): void {
+    /**
+     * Listen and trigger the provided callback once and remove imediatly the listener to avoir further calls
+     * @param event Event to listen
+     * @param callback Callback to call once
+     * @param thisArgs This context
+     */
+    export function once<T extends any[] = []>(event: IEvent<T, boolean>, callback: EventHandler<T> | AsyncEventHandler<T>, thisArgs?: any): void {
         const handler = event.async
             ? event(async (...args) => {
                 IDisposable.safeDispose(handler);
-                await callback.call(thisArgs, ...args);
+                await (callback as AsyncEventHandler<T>).call(thisArgs, ...args);
             })
             : event((...args) => {
                 IDisposable.safeDispose(handler);
-                callback.call(thisArgs, ...args);
+                (callback as EventHandler<T>).call(thisArgs, ...args);
             });
     }
 }

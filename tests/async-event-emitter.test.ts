@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { assert as sassert, spy, stub } from "sinon";
-import { AsyncEventEmitter } from "../src";
+import { AsyncEventEmitter, AsyncEvent } from "../src";
 
 describe("AsyncEventEmitter", () => {
 
@@ -54,6 +54,73 @@ describe("AsyncEventEmitter", () => {
         await emitter.emit();
 
         sassert.calledOnce(stubEvent);
+    });
+
+    it("Should enable proper async iteration", async () => {
+        const emitter = new AsyncEventEmitter<[string]>();
+
+        async function doIteration(evt: AsyncEvent<[string]>) {
+            const result: string[] = [];
+            for await (const item of evt) {
+                result.push(...item);
+                if (result.length === 2) break;
+            }
+            return result;
+        }
+        const result = doIteration(emitter.event);
+
+        assert.equal(emitter.size, 1);
+
+        await emitter.emit("bob");
+        await emitter.emit("jose");
+        await emitter.emit("leon");
+
+        assert.deepEqual(await result, ["bob", "jose"]);
+        assert.equal(emitter.size, 0);
+    });
+
+    it("Should enable async iteration and not miss an iteration", async () => {
+        const emitter = new AsyncEventEmitter<[string]>();
+
+        async function doIteration(evt: AsyncEvent<[string]>) {
+            const result: string[] = [];
+            for await (const item of evt) {
+                result.push(...item);
+                if (result.length === 3) break;
+                await new Promise<void>(r => setTimeout(() => r(), 100));
+            }
+            return result;
+        }
+        const result = doIteration(emitter.event);
+
+        await emitter.emit("bob");
+        await emitter.emit("jose");
+        await emitter.emit("leon");
+
+        assert.deepEqual(await result, ["bob", "jose", "leon"]);
+    });
+
+    it("Should enable async iteration and not miss an iteration when all events are spamed", async () => {
+        const emitter = new AsyncEventEmitter<[string]>();
+
+        async function doIteration(evt: AsyncEvent<[string]>) {
+            const result: string[] = [];
+            for await (const item of evt) {
+                result.push(...item);
+                if (result.length === 3) break;
+                await new Promise<void>(r => setTimeout(() => r(), 100));
+            }
+            return result;
+        }
+        const result = doIteration(emitter.event);
+
+        await Promise.all([
+            emitter.emit("bob"),
+            emitter.emit("jose"),
+            emitter.emit("leon")
+        ]);
+
+        assert.deepEqual(await result, ["bob", "jose", "leon"]);
     });
 
 });
