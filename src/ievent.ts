@@ -1,4 +1,4 @@
-import { Disposable, IDisposable } from "@aster-js/core";
+import { DisposableHost, IDisposable } from "@aster-js/core";
 import { AsyncEventIterator } from "./async-event-iterator";
 import { AsyncEventHandler, EventHandler, IAsyncEventEmitter, IEventEmitter } from "./ievent-emitter";
 
@@ -27,7 +27,7 @@ export namespace IEvent {
             emitter.addHandler(handler);
 
             const result = IDisposable.create(() => emitter.removeHandler(handler));
-            if (thisArgs instanceof Disposable) {
+            if (thisArgs instanceof DisposableHost) {
                 thisArgs.registerForDispose(result);
             }
             return result;
