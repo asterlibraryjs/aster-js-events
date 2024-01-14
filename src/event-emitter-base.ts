@@ -1,9 +1,9 @@
-import { Disposable } from "@aster-js/core";
+import { DisposableHost } from "@aster-js/core";
 
 const MAX_LISTENERS = 16;
 const DISABLED_MAX = -1;
 
-export class EventEmitterBase<T extends (...args: any[]) => any> extends Disposable {
+export class EventEmitterBase<T extends (...args: any[]) => any> extends DisposableHost {
     private _handlers?: T[];
     private readonly _maxSize?: number;
     private readonly _iteratorQueueMaxSize?: number;
